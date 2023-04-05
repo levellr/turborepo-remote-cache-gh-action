@@ -6022,7 +6022,7 @@ async function main() {
     subprocess.unref();
     try {
         (0,core.debug)(`Waiting for port ${port} to be used...`);
-        await (0,tcp_port_used/* waitUntilUsed */.BZ)(port, 250, 5000);
+        await (0,tcp_port_used/* waitUntilUsed */.BZ)(port, 250, 10000);
         (0,core.info)('Spawned Turbo Cache Server:');
         (0,core.info)(`  PID: ${pid}`);
         (0,core.info)(`  Listening on port: ${port}`);
