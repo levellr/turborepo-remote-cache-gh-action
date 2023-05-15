@@ -12,7 +12,7 @@ import { existsSync, mkdirSync } from "fs";
 import { logDir } from "./constants";
 import { storagePath, storageProvider, teamId, token } from "./inputs";
 
-const retries = 0;
+let retries = 0;
 
 async function main() {
   if (!existsSync(logDir)) {
@@ -58,7 +58,8 @@ async function startTurboCacheServerWithRetries() {
     saveState("pid", subprocess.pid?.toString());
   } catch (e) {
     console.error(`Turbo server failed to start on port: ${port}. Error: ${e}`);
-    if (retries < 6) {
+    if (retries < 5) {
+      retries++;
       console.log(`Attempt number ${retries + 1}. Retrying...`);
       await startTurboCacheServerWithRetries();
     } else {
