@@ -5996,20 +5996,24 @@ const token = (0,external_crypto_.randomBytes)(24).toString("hex");
 
 
 
+let retries = 0;
 async function main() {
     if (!(0,external_fs_.existsSync)(logDir)) {
         (0,core.debug)(`Creating log directory: "${logDir}"...`);
         (0,external_fs_.mkdirSync)(logDir, { recursive: true });
     }
+    await startTurboCacheServerWithRetries();
+}
+async function startTurboCacheServerWithRetries() {
     const port = 3333;
     (0,core.debug)(`Export environment variables...`);
-    (0,core.exportVariable)('TURBO_API', `http://127.0.0.1:${port}`);
-    (0,core.exportVariable)('TURBO_TOKEN', token);
-    (0,core.exportVariable)('TURBO_TEAM', teamId);
+    (0,core.exportVariable)("TURBO_API", `http://127.0.0.1:${port}`);
+    (0,core.exportVariable)("TURBO_TOKEN", token);
+    (0,core.exportVariable)("TURBO_TEAM", teamId);
     (0,core.debug)(`Starting Turbo Cache Server...`);
-    const subprocess = (0,external_child_process_namespaceObject.spawn)('node', [(0,external_path_.resolve)(__dirname, '../start_and_log')], {
+    const subprocess = (0,external_child_process_namespaceObject.spawn)("node", [(0,external_path_.resolve)(__dirname, "../start_and_log")], {
         detached: true,
-        stdio: 'ignore',
+        stdio: "ignore",
         env: {
             ...process.env,
             PORT: port.toString(),
@@ -6022,15 +6026,22 @@ async function main() {
     subprocess.unref();
     try {
         (0,core.debug)(`Waiting for port ${port} to be used...`);
-        await (0,tcp_port_used/* waitUntilUsed */.BZ)(port, 250, 10000);
-        (0,core.info)('Spawned Turbo Cache Server:');
+        await (0,tcp_port_used/* waitUntilUsed */.BZ)(port, 250, 5000);
+        (0,core.info)("Spawned Turbo Cache Server:");
         (0,core.info)(`  PID: ${pid}`);
         (0,core.info)(`  Listening on port: ${port}`);
-        (0,core.saveState)('pid', subprocess.pid?.toString());
+        (0,core.saveState)("pid", subprocess.pid?.toString());
     }
     catch (e) {
-        console.log(e);
-        throw new Error(`Turbo server failed to start on port: ${port}`);
+        console.error(`Turbo server failed to start on port: ${port}. Error: ${e}`);
+        if (retries < 5) {
+            retries++;
+            console.log(`Attempt number ${retries + 1}. Retrying...`);
+            await startTurboCacheServerWithRetries();
+        }
+        else {
+            throw new Error(`Couldn't start Turbo Repo Cache server after 5 attempts. See error details above.`);
+        }
     }
 }
 main().catch(core.setFailed);
